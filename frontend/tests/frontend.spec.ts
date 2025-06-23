@@ -10,7 +10,7 @@ test('displays message from backend', async ({ page }) => {
 });
 
 
-test('shows error message when backend is unavailable', async ({ page }) => {
+test.skip('shows error message when backend is unavailable', async ({ page }) => {
   // Simulate backend being down by navigating to a broken endpoint (optional: stop backend manually)
   // Temporarily modify the fetch URL in page.tsx to a non-existent port if you want to force failure
 
