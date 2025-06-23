@@ -28,8 +28,20 @@ jobs:
       - name: Run backend tests with Pytest
         run: docker-compose run --rm flask-backend pytest
 
-      - name: Run frontend tests with Playwright
+      - name: Start frontend and backend
+        run: docker-compose up -d
+
+      - name: Wait for frontend to be ready
         run: |
-          docker-compose up -d flask-backend
-          docker-compose run --rm nextjs-frontend npx playwright install --with-deps
-          docker-compose run --rm nextjs-frontend npx playwright test
+          echo "Waiting for frontend to be ready..."
+          until curl -s http://localhost:3000 > /dev/null; do
+            sleep 2
+          done
+          echo "Frontend is up!"
+
+      - name: Run frontend tests with Playwright
+        run: docker-compose exec -T nextjs-frontend npx playwright test
+
+      - name: Stop and clean up
+        if: always()
+        run: docker-compose down --volumes --remove-orphans
