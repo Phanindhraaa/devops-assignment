@@ -1,9 +1,8 @@
 # ----------- Build Stage -----------
-FROM node:20-alpine AS builder
+FROM node:20-bullseye AS builder
 
 WORKDIR /app
 
-# Accept the backend URL at build time
 ARG NEXT_PUBLIC_BACKEND_URL
 ENV NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL
 
@@ -11,22 +10,24 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
-
-# Important: Build with the correct env var injected
 RUN npm run build
 
 # ----------- Run Stage -----------
-FROM node:20-alpine AS runner
+FROM node:20-bullseye AS runner
+
 WORKDIR /app
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
+# Optional: Install Playwright dependencies manually
+RUN apt-get update && apt-get install -y wget gnupg curl libgtk-3-0 libxss1 libasound2 libnss3 libxshmfence1 \
+  && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app /app
+WORKDIR /app
+
+RUN npm install --omit=dev && npx playwright install --with-deps
 
 ENV NODE_ENV=production
 ENV PORT=3000
 
 EXPOSE 3000
-
 CMD ["npm", "start"]
